@@ -1,0 +1,63 @@
+	-- KKWE_LOCAL_CONTEXT_BRIDGE_BEGIN v1
+	do
+		local function kklc_quote(value)
+			value = tostring(value)
+			if value:find('["\r\n]') then error('Invalid compiler bridge path') end
+			return '"' .. value .. '"'
+		end
+		local function kklc_report(message)
+			log.error(tostring(message))
+			gui.error_message(nil, '%s', tostring(message))
+		end
+		local function kklc_run_cli(action, input)
+			if not input then error('Missing KKWE compiler bridge input for ' .. action) end
+			local kklc_command = kklc_quote(@@PYTHON@@) .. ' -X utf8 -B ' .. kklc_quote(@@CLI@@)
+				.. ' ' .. action .. ' --input ' .. kklc_quote(input:string())
+				.. ' --editor-root ' .. kklc_quote(@@EDITOR@@)
+			local kklc_proc, kklc_out, kklc_err = sys.spawn_pipe(kklc_command, nil)
+			if not kklc_proc then error('Cannot start KKWE local context transformer') end
+			local kklc_stdout = kklc_out:read('*a')
+			local kklc_stderr = kklc_err:read('*a')
+			local kklc_code = kklc_proc:wait()
+			kklc_proc:close()
+			if kklc_code ~= 0 then
+				error('KKWE local context ' .. action .. ' failed: ' .. tostring(kklc_stderr or '') .. '\n' .. tostring(kklc_stdout or ''))
+			end
+		end
+		local kklc_ok, kklc_error = pcall(function()
+			if type(template) ~= 'table' or type(template.compile) ~= 'function' then
+				error('KKWE template compiler is not ready; final validation cannot be installed')
+			end
+			local kklc_state = template.__kklc_postvalidate_v1
+			if kklc_state then
+				if type(kklc_state) ~= 'table' or template.compile ~= kklc_state.wrapper then
+					error('KKWE template compiler wrapper changed; refusing an unverified compilation chain')
+				end
+			else
+				kklc_state = {original = template.compile}
+				local kklc_pack = table.pack or function(...) return {n = select('#', ...), ...} end
+				local kklc_unpack = table.unpack or unpack
+				kklc_state.wrapper = function(kklc_self, kklc_op, ...)
+					local kklc_results = kklc_pack(kklc_state.original(kklc_self, kklc_op, ...))
+					if not kklc_results[1] then
+						return kklc_unpack(kklc_results, 1, kklc_results.n)
+					end
+					local kklc_valid, kklc_validation_error = pcall(kklc_state.run_cli, 'validate', kklc_op.output)
+					if not kklc_valid then
+						kklc_report(kklc_validation_error)
+						return false
+					end
+					return kklc_unpack(kklc_results, 1, kklc_results.n)
+				end
+				template.__kklc_postvalidate_v1 = kklc_state
+				template.compile = kklc_state.wrapper
+			end
+			kklc_state.run_cli = kklc_run_cli
+			kklc_run_cli('transform', op.input)
+		end)
+		if not kklc_ok then
+			kklc_report(kklc_error)
+			return false
+		end
+	end
+	-- KKWE_LOCAL_CONTEXT_BRIDGE_END v1

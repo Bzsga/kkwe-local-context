@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "description": "Validated local KKWE 2.0.13.2606 compiler input baseline; unknown upstream changes require adaptation.",
+  "editor_version": "2.0.13.2606",
+  "relative_files": {
+    "plugin/YDTrigger.dll": "2cd2f24a87811e2934b1a0fb964c1685f4837e7451f2e9490b7a8d4225b04e9e",
+    "plugin/YDTrigger/Hash.h": "9ac32fc6d15f483aae000e331eeb3a0946fb5aa51c78cc13678f8c17bb313ec7",
+    "plugin/YDTrigger/SaveLoadSystem/HTSet_Get.h": "4fa58f4a5a4365c257b5d5f568dca5928a5d379a93c05c0dd832a5eaf1d829a2",
+    "plugin/YDTrigger/SaveLoadSystem/Has_Clear.h": "c79be62df18dd55abae1727e2f4257fdbc97c5af93caa6695d7c05530a75cee7",
+    "share/script/compile/template.lua": "930cc74f3088c2e4566009460f531e4ec2b54e32ec4dd32b083ff3e9dbee3214",
+    "share/script/ydwe_on_save.lua": "8bfa41ba59949539ae37264691864f8a04b9bf96627dad93fb72442c41e8cb20"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "profiles": [
+    {
+      "id": "kkwe-wave-2.0.13.2606-content-v2",
+      "sha256": "f02f479fdd0bf6698d17b10bc0d996020ae3b247acdd10fcf8eaca13a3a5e193",
+      "semantic_sha256": "d3bb8d8212a5dde6de8e5bdd78a66655ffccd4537dc28f0a25574824732837ef",
+      "description": "Reviewed complete compiler Lua tokens, including indivisible multi-character operators. Whitespace/comments between tokens and editor executable version may change; executable Lua changes require review."
+    }
+  ]
+}
