@@ -21,7 +21,8 @@ spec.loader.exec_module(manager)
 class ManagerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='KKWE 中文 path ')
-        self.base = Path(self.temporary.name)
+        # Windows temp paths may use an 8.3 alias; match Manager's canonical paths.
+        self.base = Path(self.temporary.name).resolve()
         self.editor = self.base / 'Editor 中文'
         self.tool = self.base / 'tools 中文'
         shutil.copytree(ROOT / 'bootstrap', self.tool / 'bootstrap')
