@@ -21,3 +21,6 @@ logs/
 *.pem
 .DS_Store
 Thumbs.db
+
+# Explicitly reviewed public demo; other maps remain ignored.
+!examples/gui-context-demo/KKWE触发器版串值演示.w3x

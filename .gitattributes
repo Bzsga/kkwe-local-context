@@ -7,3 +7,4 @@
 *.md text eol=lf
 *.yml text eol=lf
 *.ps1 text eol=crlf
+*.w3x binary

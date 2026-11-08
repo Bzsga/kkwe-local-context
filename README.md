@@ -72,6 +72,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\launch.ps1 -EditorRoot $en
 
 ## 开发与验证
 
+需要可以直接打开和运行的例子时，见 [GUI 触发器演示图](examples/gui-context-demo/README.md)。其中包含 2026-10-28 已编译的 `.w3x`、7 个可展开 GUI 触发器、测试预期和历史验证说明；验证当前源码需在启用工具后重新保存编译。
+
 不需要安装编辑器即可运行源码和模拟 native 的单元测试：
 
 ```powershell
@@ -119,7 +121,8 @@ python -X utf8 -B .\cli.py transform --input .\fixtures\representative.j --outpu
 | `manager.py` / `bootstrap/` | 可恢复的接入管理与桥模板 |
 | `gui.py` / `launch.ps1` | 中文管理窗口与显式启动入口 |
 | `tests/` / `fixtures/` / `verification/` | 原创合成测试、native mocks 与验证脚本 |
+| `examples/gui-context-demo/` | 明确公开的 GUI 演示地图与使用说明 |
 
-本仓库不分发 KKWE、YDWE、Warcraft III、Wave、JassHelper、PJASS 的程序或完整原始编译脚本，不包含用户地图、业务源码、运行日志和安装备份。测试编译器夹具为原创模拟实现，不会被加入生产受信任指纹。第三方软件与商标仍遵循其各自的许可及权利，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+本仓库不分发 KKWE、YDWE、Warcraft III、Wave、JassHelper、PJASS 的程序或完整原始编译脚本，不包含私人地图、业务源码、运行日志和安装备份；唯一明确公开的演示地图位于上述 `examples/` 目录。测试编译器夹具为原创模拟实现，不会被加入生产受信任指纹。第三方软件与商标仍遵循其各自的许可及权利，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
 
 自有源码按 [MIT License](LICENSE) 开源。
