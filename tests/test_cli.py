@@ -14,6 +14,75 @@ import cli
 class CLITests(unittest.TestCase):
     LOCAL_SOURCE = b'function A takes nothing returns nothing\nYDLocalInitialize()\ncall YDLocal1Set(integer,"x",1)\nendfunction\n'
 
+    def test_runtime_initializes_before_first_local_ui_access(self):
+        entries = (
+            'call BJDebugMsg(I2S(YDLocal6Get("panel", integer, "counter")))',
+            'call A()',
+            'call DestroyTimer(null)',
+        )
+        for entry in entries:
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as d, patch.object(cli, "check_baseline", return_value={"compatible": True}):
+                source = Path(d) / "file.out"
+                source.write_bytes(self.LOCAL_SOURCE + (
+                    'function LocalUI takes nothing returns nothing\n'
+                    '    if GetLocalPlayer() == Player(0) then\n'
+                    '        ' + entry + '\n    endif\nendfunction\n').encode())
+                cli.transform_file(source, None, Path(d))
+                text = source.read_text(encoding="utf-8")
+                self.assertIn('library KKLCRuntime initializer KKLC_Init', text.splitlines())
+                self.assertEqual(text.count('initializer KKLC_Init'), 1)
+                self.assertIn('if GetLocalPlayer() == Player(0) then', text)
+                first = source.read_bytes()
+                self.assertTrue(cli.transform_file(source, None, Path(d))["already_adapted"])
+                self.assertEqual(source.read_bytes(), first)
+
+    def test_runtime_dependency_preserves_user_initializers(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(cli, "check_baseline", return_value={"compatible": True}):
+            source = Path(d) / "file.out"
+            source.write_bytes(
+                b'library Existing initializer Init\nprivate function Init takes nothing returns nothing\nendfunction\nendlibrary\n'
+                b'library UI initializer Init requires Existing\nprivate function Init takes nothing returns nothing\n'
+                b'call BJDebugMsg(I2S(YDLocal6Get("panel", integer, "counter")))\nendfunction\nendlibrary\n')
+            cli.transform_file(source, None, Path(d))
+            text = source.read_text(encoding="utf-8")
+            self.assertIn('library KKLCRuntime initializer KKLC_Init', text.splitlines())
+            self.assertIn('library Existing initializer Init requires KKLCRuntime', text.splitlines())
+            self.assertIn('library UI initializer Init requires Existing, KKLCRuntime', text.splitlines())
+            self.assertTrue(cli.validate_file(source, Path(d))["ok"])
+
+    def test_runtime_tables_exist_before_main_pre_library_access(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(cli, "check_baseline", return_value={"compatible": True}):
+            source = Path(d) / "file.out"
+            source.write_bytes(
+                b'function LocalUIValue takes nothing returns integer\n'
+                b'if GetLocalPlayer() == Player(0) then\n'
+                b'return YDLocal6Get("panel", integer, "counter")\nendif\nreturn 0\nendfunction\n'
+                b'function main takes nothing returns nothing\n'
+                b'call BJDebugMsg(I2S(LocalUIValue()))\ncall InitBlizzard()\nendfunction\n')
+            cli.transform_file(source, None, Path(d))
+            text = source.read_text(encoding="utf-8")
+            before_main, main = text.split('function main takes nothing returns nothing', 1)
+            for table in ('Data', 'Arrays', 'Meta', 'ArrayMap', 'IndexMap', 'Owners'):
+                self.assertIn('    hashtable KKLC_' + table + ' = InitHashtable()', before_main.splitlines())
+            self.assertLess(main.index('LocalUIValue()'), main.index('InitBlizzard()'))
+            init_body = text.split('function KKLC_Init takes nothing returns nothing', 1)[1].split('endfunction', 1)[0]
+            self.assertNotIn('InitHashtable()', init_body)
+            self.assertEqual(text.count('InitHashtable()'), 6)
+            self.assertTrue(cli.validate_file(source, Path(d))["ok"])
+
+    def test_previous_pipeline_marker_requires_regeneration(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(cli, "check_baseline", return_value={"compatible": True}):
+            source = Path(d) / "file.out"
+            source.write_bytes(self.LOCAL_SOURCE)
+            with patch.object(cli, "compiler_identity", return_value="0" * 64):
+                cli.transform_file(source, None, Path(d))
+            previous = source.read_bytes()
+            with self.assertRaisesRegex(ValueError, "其他版本"):
+                cli.transform_file(source, None, Path(d))
+            with self.assertRaisesRegex(ValueError, "版本标记不匹配"):
+                cli.validate_file(source, Path(d))
+            self.assertEqual(source.read_bytes(), previous)
+
     def test_concurrent_source_change_is_not_overwritten(self):
         for separate in (False, True):
             with self.subTest(separate=separate), tempfile.TemporaryDirectory() as d:

@@ -143,11 +143,11 @@ def add_runtime_dependencies(source: str, adapter) -> str:
 
 
 def with_runtime_library(text: str, prefix_length: int, runtime: str, adapter) -> str:
-    """Keep runtime and generated typed wrappers together before user libraries."""
+    """Initialize runtime readiness before dependent user libraries run."""
     generated, source = text[:prefix_length], text[prefix_length:]
     if any(token.kind == 'id' and token.value == 'KKLCRuntime' for token in adapter.lex(source)):
         raise ValueError('Input contains reserved generated library name KKLCRuntime')
-    return ('library KKLCRuntime\n' + runtime + '\n' + generated + '\nendlibrary\n'
+    return ('library KKLCRuntime initializer KKLC_Init\n' + runtime + '\n' + generated + '\nendlibrary\n'
             + add_runtime_dependencies(source, adapter))
 
 

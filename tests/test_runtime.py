@@ -386,7 +386,8 @@ class RuntimeTests(unittest.TestCase):
             attempts += 1
             return {} if attempts < 3 else None
 
-        self.r.ns["InitHashtable"] = capacity_limited_init
+        self.r = JassRuntime(native_overrides={"InitHashtable": capacity_limited_init})
+        self.assertEqual(attempts, 6)
         self.assertEqual(self.r.KKLC_Alloc(), 0)
         self.assertEqual(self.r.KKLC_Alloc(), 0)
         self.assertEqual(attempts, 6)

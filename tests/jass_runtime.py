@@ -109,7 +109,7 @@ def translate_jass(source: str) -> str:
 
 
 class JassRuntime:
-    def __init__(self, path: Path | None = None):
+    def __init__(self, path: Path | None = None, native_overrides: dict | None = None):
         self.source_path = path or Path(__file__).parents[1] / "runtime" / "kklc_runtime.j"
         self.tables: list[dict] = []
         self.messages: list[str] = []
@@ -128,6 +128,9 @@ class JassRuntime:
             self.ns["Load" + type_] = self._load(type_, default)
             self.ns["HaveSaved" + type_] = self._have(type_)
             self.ns["RemoveSaved" + type_] = self._remove(type_)
+        # Overrides must be active during JASS global initializers too.
+        if native_overrides:
+            self.ns.update(native_overrides)
         self.python_source = translate_jass(self.source_path.read_text(encoding="utf-8-sig"))
         exec(compile(self.python_source, str(self.source_path), "exec"), self.ns)
 

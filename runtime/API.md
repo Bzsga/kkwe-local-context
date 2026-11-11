@@ -1,6 +1,6 @@
 # KKLC runtime contract (v1)
 
-`kklc_runtime.j` is plain JASS, inserted before transformed user functions. It uses six fixed hashtables and logical IDs; no per-call hashtable creation or native JASS arrays. Public data tables are `KKLC_Data` (scalar: ctx, symbol) and `KKLC_Arrays` (array: page, exact signed index). Call `KKLC_Init()` before use; public allocation/lookup entry points initialize lazily too.
+`kklc_runtime.j` is plain JASS, inserted before transformed user functions. It uses six fixed hashtables and logical IDs; no per-call hashtable creation or native JASS arrays. Public data tables are `KKLC_Data` (scalar: ctx, symbol) and `KKLC_Arrays` (array: page, exact signed index). The six `InitHashtable()` calls are global native initializers, before `main`; they must never run lazily in a local UI callback. The generated `KKLCRuntime initializer KKLC_Init` checks readiness before dependent libraries. Public allocation/lookup entry points also perform this idempotent readiness check, without creating handles.
 
 ## Ownership and API
 
@@ -43,6 +43,10 @@ Scalar capture is generated typed Save/Load with collision-free compile-time sym
 - `Alive` validates present allocation, not the historical identity of a stale integer. Contexts, pages and bridge tokens are opaque and must not be cached after release/pop. Safe reuse relies on every live callback/pending/owner holding its declared reference; no generation-based stale-ID recovery is claimed.
 - Allocation/refcount exhaustion reports a diagnostic and returns 0; adapter must stop that generated entry when acquisition fails. Context 0 must never be used to store data. If the engine cannot allocate all six hashtables, initialization fails closed without repeatedly creating more tables.
 - Flush removes saved references; it does not destroy borrowed game objects.
+
+## Multiplayer boundary
+
+Synchronous bridge means a non-yielding call, not a network synchronization guarantee. The adapter does not analyze all `GetLocalPlayer`, local UI events, or local-value data flow. Named pages intentionally preserve local UI state; synchronize and validate that input before using it to change shared game state. Context IDs are opaque local lookup keys, not cross-client object IDs. Different internal IDs alone do not prove desync. Array cleanup/capture still has work proportional to its stored elements; very large client-specific data can cause different execution costs. These boundaries are detailed in [the desync audit](../DESYNC-AUDIT.md).
 
 ## Verification boundary
 

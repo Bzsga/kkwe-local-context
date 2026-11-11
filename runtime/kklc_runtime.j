@@ -2,12 +2,14 @@
 // Metadata keys: 0 kind, 1 refs/free-next, 2 list-next/head, 3 index-head/value/ctx.
 // Kinds: 1 context, 2 array page, 3 index node, 4 synchronous bridge.
 globals
-    hashtable KKLC_Data = null
-    hashtable KKLC_Arrays = null
-    hashtable KKLC_Meta = null
-    hashtable KKLC_ArrayMap = null
-    hashtable KKLC_IndexMap = null
-    hashtable KKLC_Owners = null
+    // Allocate in the synchronized global initialization phase. A first local
+    // UI callback must never lazily create handles on just one client.
+    hashtable KKLC_Data = InitHashtable()
+    hashtable KKLC_Arrays = InitHashtable()
+    hashtable KKLC_Meta = InitHashtable()
+    hashtable KKLC_ArrayMap = InitHashtable()
+    hashtable KKLC_IndexMap = InitHashtable()
+    hashtable KKLC_Owners = InitHashtable()
     boolean KKLC_InitAttempted = false
     boolean KKLC_Ready = false
     integer KKLC_NextId = 0
@@ -21,12 +23,6 @@ endglobals
 function KKLC_Init takes nothing returns nothing
     if not KKLC_InitAttempted then
         set KKLC_InitAttempted = true
-        set KKLC_Data = InitHashtable()
-        set KKLC_Arrays = InitHashtable()
-        set KKLC_Meta = InitHashtable()
-        set KKLC_ArrayMap = InitHashtable()
-        set KKLC_IndexMap = InitHashtable()
-        set KKLC_Owners = InitHashtable()
         set KKLC_Ready = KKLC_Data != null and KKLC_Arrays != null and KKLC_Meta != null and KKLC_ArrayMap != null and KKLC_IndexMap != null and KKLC_Owners != null
         if not KKLC_Ready then
             set KKLC_Errors = KKLC_Errors + 1
